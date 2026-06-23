@@ -281,18 +281,22 @@ const createDefaultSpreads = (): SpreadState[] => [
 
 const JOURNAL_PROMPTS = [
   "Two things that are the exact same color",
+  "Gathering color stories from everyday objects",
   "A ticket stub or receipt from a memorable meal",
   "A pressed flower or leaf collected today",
   "Sketch a tiny object on your desk right now",
   "Write down three words that describe the weather today",
-  "A photo of a view that made you stop and look",
-  "The last text message that made you smile",
+  "Your favorite corner in your home at golden hour",
+  "The song lyric that was stuck in your head today",
+  "Something you held in your hand that felt warm",
   "A memory of your favorite snack",
   "A color combination that feels like peace",
   "Write a single sentence from a book you love",
   "A sketch of your current mood as a weather icon",
   "A list of songs playing on repeat this week",
-  "Something small that made you feel grateful today"
+  "Something small that made you feel grateful today",
+  "Find a piece of discarded paper or packaging and capture it",
+  "What is a texture that you touched today?"
 ];
 
 export default function App() {
@@ -858,7 +862,7 @@ export default function App() {
         ? currentSpread.chapterTitle?.replace(/\s+/g, '-').toLowerCase()
         : `spread-${spreadNum}`;
 
-      link.download = `scrapbook-${chapterName}-${dateStr}.png`;
+      link.download = 'journal-spread.png';
       link.href = dataUrl;
       link.click();
     } catch (err) {
@@ -874,10 +878,11 @@ export default function App() {
   const leftPagesPassed = currentSpreadIndex;
 
   return (
-    <div className="h-screen max-h-screen overflow-hidden bg-[#1A1A1A] text-white flex flex-col font-sans select-none relative">
+    <div className="h-screen max-h-screen overflow-hidden bg-[#1A1A18] text-white flex flex-col font-sans select-none relative">
       
       {/* HEADER BAR */}
-      <header className="px-6 py-2.5 bg-neutral-950/85 backdrop-blur-md border-b border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 select-none shrink-0 z-10">
+      <header className="px-6 py-2.5 bg-neutral-950/85 backdrop-blur-md border-b border-white/5 flex items-center justify-between select-none shrink-0 z-10">
+        {/* LEFT BRANDING */}
         <div className="flex items-center gap-3 shrink-0">
           <BookOpen className="w-5 h-5 text-[#E8341A]" />
           <div>
@@ -888,27 +893,31 @@ export default function App() {
           </div>
         </div>
 
-        {/* MIDDLE: DAILY PROMPT BAR */}
-        <div className="flex items-center justify-center flex-1 max-w-xl px-2">
-          <div className="bg-[#F8F6F2] text-neutral-800 rounded-full px-4 py-1.5 flex items-center gap-3 text-xs shadow-md border border-[#E8E6E2] w-full justify-between sm:justify-start">
-            <span className="bg-[#FBEBE6] text-[#C2513C] text-[9px] font-black font-mono px-2.5 py-0.5 rounded-full uppercase tracking-wider shrink-0">
-              DAILY PROMPT
-            </span>
-            <span className="italic font-medium text-neutral-700 truncate select-text text-left flex-1 min-w-0">
-              "{currentPrompt}"
-            </span>
-            <span className="text-neutral-300 hidden sm:inline">|</span>
-            <button
-              onClick={handleShufflePrompt}
-              className="text-neutral-500 hover:text-[#C2513C] transition-colors font-mono font-bold text-[10px] cursor-pointer hover:underline uppercase shrink-0"
-            >
-              Shuffle
-            </button>
+        {/* CENTER DAILY PROMPT BAR */}
+        <div className="hidden lg:flex items-center justify-center flex-1 max-w-lg mx-6">
+          <div className="border border-white/15 rounded-full px-4 py-1.5 flex items-center justify-between gap-3 text-xs w-full bg-transparent">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <span className="bg-[#E8341A] text-white text-[9px] font-black font-mono px-2.5 py-0.5 rounded-full uppercase tracking-wider shrink-0 shadow-xs">
+                DAILY PROMPT
+              </span>
+              <span className="italic text-neutral-200 font-medium truncate text-left text-[11px] sm:text-xs select-text">
+                "{currentPrompt}"
+              </span>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-white/10 font-mono">|</span>
+              <button
+                onClick={handleShufflePrompt}
+                className="text-neutral-400 hover:text-[#E8341A] transition-colors font-mono font-bold text-[10px] cursor-pointer hover:underline uppercase shrink-0"
+              >
+                Shuffle
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* TOP LEVEL DESKTOP NAVIGATION & ACTIONS */}
-        <div className="flex items-center justify-end gap-3 shrink-0">
+        {/* RIGHT TOP ACTION BAR */}
+        <div className="flex items-center gap-3 shrink-0">
           <div className="flex items-center bg-black/40 px-3.5 py-1 rounded-full text-xs font-mono border border-white/10 text-neutral-300">
             <span className="text-[#E8341A] font-bold mr-1">{currentSpreadIndex + 1}</span> / {spreads.length} SPREADS
           </div>
@@ -939,91 +948,54 @@ export default function App() {
             >
               <span>Pages</span>
             </button>
-
-            {/* Export */}
-            <button
-              onClick={exportSpreadAsPNG}
-              className="px-3.5 py-2 bg-[#E8341A] hover:bg-red-600 rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 transition-all shadow-md active:scale-95 cursor-pointer text-white border border-red-500/10"
-              title="Export Spread as 2x PNG"
-            >
-              <Download className="w-4 h-4" />
-              <span className="hidden sm:inline">Export Spread</span>
-            </button>
           </div>
         </div>
       </header>
 
       {/* MAIN SCRAPBOOK WORKSPACE */}
-      <main className="flex-1 flex items-center justify-center p-4 md:p-6 relative select-none overflow-hidden" style={{ minHeight: 0 }}>
+      <main className="flex-1 flex items-center justify-center px-12 py-4 md:px-16 relative select-none overflow-hidden bg-[#1A1A18]" style={{ minHeight: 0 }}>
         
-        {/* Left Page Turn Button */}
+        {/* Left Page Page-Turn Button (Sits OUTSIDE the book on the far left edge) */}
         {currentSpreadIndex > 0 && !isFlipping && (
           <button
             onClick={() => triggerPageTurn('backward')}
-            className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-16 bg-neutral-900/60 border border-neutral-800 hover:border-neutral-600 text-neutral-300 hover:text-white rounded-r-xl flex items-center justify-center transition-all z-20 hover:scale-110 active:scale-90"
+            className="absolute left-6 top-1/2 -translate-y-1/2 w-11 h-11 bg-[#FBF9F4] text-[#C2513C] hover:text-[#E8341A] rounded-full flex items-center justify-center shadow-2xl border border-neutral-300/30 transition-all z-35 hover:scale-110 active:scale-95 cursor-pointer"
             title="Previous Page (Left Arrow)"
           >
-            <ChevronLeft className="w-6 h-6" />
+            <ChevronLeft className="w-6 h-6 stroke-[3px]" />
           </button>
         )}
 
-        {/* Right Page Turn Button */}
+        {/* Right Page Page-Turn Button (Sits OUTSIDE the book on the far right edge) */}
         {currentSpreadIndex < spreads.length - 1 && !isFlipping && (
           <button
             onClick={() => triggerPageTurn('forward')}
-            className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-16 bg-neutral-900/60 border border-neutral-800 hover:border-neutral-600 text-neutral-300 hover:text-white rounded-l-xl flex items-center justify-center transition-all z-20 hover:scale-110 active:scale-90"
+            className="absolute right-6 top-1/2 -translate-y-1/2 w-11 h-11 bg-[#FBF9F4] text-[#C2513C] hover:text-[#E8341A] rounded-full flex items-center justify-center shadow-2xl border border-neutral-300/30 transition-all z-35 hover:scale-110 active:scale-95 cursor-pointer"
             title="Next Page (Right Arrow)"
           >
-            <ChevronRight className="w-6 h-6" />
+            <ChevronRight className="w-6 h-6 stroke-[3px]" />
           </button>
         )}
 
-        {/* THE 3D BOOK BODY CONTAINER */}
+        {/* THE WIDE FLAT BOOK SPREAD CONTAINER */}
         <div 
-          className="relative w-full max-w-[1040px] h-full max-h-[calc(100vh-210px)] aspect-[1.55] select-none perspective-1500 flex items-center justify-center"
+          className="relative w-[96%] max-w-[1240px] h-full max-h-[calc(100vh-220px)] aspect-[1.6] select-none flex items-center justify-center z-10"
           onClick={() => setSelectedItemId(null)}
         >
           {/* THE BOOK PHYSICAL SIDES LAYOUT */}
           {currentSpread && (
             <div 
               id="scrapbook-book"
-              className="w-full h-full relative flex preserve-3d"
+              className="w-full h-full relative flex z-10"
             >
               
-              {/* PAGE DEPTH STACK EDGE (Left Side) */}
-              {leftPagesPassed > 0 && (
-                <div className="absolute top-1 bottom-1 -left-[14px] w-[14px] flex flex-row-reverse z-0 pointer-events-none">
-                  {Array.from({ length: Math.min(5, leftPagesPassed) }).map((_, i) => (
-                    <div 
-                      key={i} 
-                      className="h-full w-[2px] bg-[#E8E6E2] border-l border-neutral-400/40 shadow-xs" 
-                      style={{ transform: `translateX(${i * 1.5}px)` }}
-                    />
-                  ))}
-                  {/* Outer Cover back edge */}
-                  <div className="h-full w-[4px] bg-[#1A1A1A] rounded-l shadow-lg" />
-                </div>
-              )}
-
-              {/* PAGE DEPTH STACK EDGE (Right Side) */}
-              {rightPagesRemaining > 0 && (
-                <div className="absolute top-1 bottom-1 -right-[14px] w-[14px] flex z-0 pointer-events-none">
-                  {Array.from({ length: Math.min(5, rightPagesRemaining) }).map((_, i) => (
-                    <div 
-                      key={i} 
-                      className="h-full w-[2px] bg-[#E8E6E2] border-r border-neutral-400/40 shadow-xs"
-                      style={{ transform: `translateX(${-i * 1.5}px)` }}
-                    />
-                  ))}
-                  {/* Outer Cover front edge */}
-                  <div className="h-full w-[4px] bg-[#1A1A1A] rounded-r shadow-lg" />
-                </div>
-              )}
+              {/* FLAT CARDBOARD BACKING COVER (sleek board with no rounded book crease/bevels, soft shadows) */}
+              <div className="absolute inset-[-8px] rounded-xl bg-[#2E3430] border border-[#1E2220]/40 shadow-[0_20px_50px_rgba(0,0,0,0.8),inset_0_1px_1px_rgba(255,255,255,0.05)] z-0 pointer-events-none" />
 
               {/* 1. CHAPTER DIVIDER DISPLAY MODE */}
               {currentSpread.isChapterDivider ? (
                 <div 
-                  className="w-full h-full rounded-2xl p-8 md:p-16 flex flex-col justify-between relative shadow-2xl overflow-hidden border border-neutral-900 select-none animate-[peel-in_0.5s_ease-out]"
+                  className="w-full h-full rounded-2xl p-8 md:p-16 flex flex-col justify-between relative shadow-2xl overflow-hidden border border-neutral-950/45 select-none animate-[peel-in_0.5s_ease-out] z-10"
                   style={{ backgroundColor: currentSpread.chapterColor || '#E8341A' }}
                 >
                   {/* Decorative stamp grid paper backdrop overlay */}
@@ -1082,9 +1054,7 @@ export default function App() {
                       setSelectedItemPage('left');
                       setSelectedItemId(null);
                     }}
-                    className={`w-1/2 h-full rounded-l-2xl shadow-xl relative overflow-hidden select-none border-r border-neutral-300 flex flex-col justify-between p-4 ${
-                      isFlipping === 'backward' ? 'bg-[#fffaee]' : 'grid-paper'
-                    }`}
+                    className={`w-1/2 h-full rounded-l-2xl shadow-lg relative overflow-hidden select-none border-r border-neutral-300/70 flex flex-col justify-between p-4 z-10 bg-[#FBF9F4] grid-paper`}
                   >
                     {/* Tiny watermark branding */}
                     <div className="absolute top-3 left-3 select-none flex items-center gap-1 opacity-25">
@@ -1123,7 +1093,7 @@ export default function App() {
                     )}
                   </div>
 
-                  {/* SPIRAL BINDING MIDDLE SPINE */}
+                  {/* REALISTIC CREASED SPINE GUTTER (No heavy wire/spirals, beautiful parallel shading) */}
                   <SpiralBinding />
 
                   {/* RIGHT PAGE CANVASES */}
@@ -1136,9 +1106,7 @@ export default function App() {
                       setSelectedItemPage('right');
                       setSelectedItemId(null);
                     }}
-                    className={`w-1/2 h-full rounded-r-2xl shadow-xl relative overflow-hidden select-none flex flex-col justify-between p-4 ${
-                      isFlipping === 'forward' ? 'bg-[#fffaee]' : 'grid-paper'
-                    }`}
+                    className={`w-1/2 h-full rounded-r-2xl shadow-lg relative overflow-hidden select-none flex flex-col justify-between p-4 z-10 bg-[#FBF9F4] grid-paper`}
                   >
                     {/* Tiny watermark branding */}
                     <div className="absolute top-3 right-3 select-none flex items-center gap-1 opacity-25">
@@ -1179,24 +1147,45 @@ export default function App() {
                 </>
               )}
 
-              {/* 3. FLIPPING PAGE OVERLAY (CSS 3D ANIMATION) */}
+              {/* 3. FLIPPING PAGE OVERLAY (CSS 3D ANIMATION - DUAL SIDED WITH CORNER PEELING) */}
               {isFlipping && (
-                <div 
-                  className={`absolute top-0 bottom-0 w-1/2 z-40 bg-[#fbf9f4] shadow-2xl border-l border-neutral-300 preserve-3d transition-transform duration-600 ease-in-out ${
-                    isFlipping === 'forward' 
-                      ? 'left-1/2 origin-left -rotate-y-180 rounded-r-2xl' 
-                      : 'left-0 origin-right rotate-y-180 rounded-l-2xl'
-                  }`}
-                  style={{
-                    transformStyle: 'preserve-3d'
-                  }}
-                >
-                  {/* Grid-paper texture inside mid-turn page sheet */}
-                  <div className="absolute inset-0 grid-paper opacity-50" />
-                  
-                  {/* Mid-flip shadow lines for paper thickness */}
-                  <div className="absolute inset-0 bg-linear-to-r from-black/10 via-transparent to-black/15 mix-blend-multiply rounded-2xl" />
-                </div>
+                <>
+                  {/* Under-sheet cast shadows */}
+                  {isFlipping === 'forward' && (
+                    <div className="absolute top-0 bottom-0 left-0 right-0 z-15 pointer-events-none bg-neutral-950/40 rounded-2xl animate-shadow-forward" />
+                  )}
+                  {isFlipping === 'backward' && (
+                    <div className="absolute top-0 bottom-0 left-0 right-0 z-15 pointer-events-none bg-neutral-950/40 rounded-2xl animate-shadow-backward" />
+                  )}
+
+                  {/* Flipping double-sided sheet */}
+                  <div 
+                    className={`absolute top-0 bottom-0 w-1/2 z-40 preserve-3d pointer-events-none ${
+                      isFlipping === 'forward' 
+                        ? 'left-1/2 origin-left animate-flip-forward' 
+                        : 'left-0 origin-right animate-flip-backward'
+                    }`}
+                    style={{
+                      transformStyle: 'preserve-3d'
+                    }}
+                  >
+                    {/* Front side of the flipping page */}
+                    <div className="absolute inset-0 bg-[#FBF9F4] shadow-lg rounded-2xl border border-neutral-300/40 backface-hidden flex flex-col justify-between p-4 overflow-hidden">
+                      <div className="absolute inset-0 grid-paper opacity-50" />
+                      <div className="absolute inset-0 bg-gradient-to-r from-black/10 via-transparent to-black/10 mix-blend-multiply" />
+                      {/* Interactive darkening overlay */}
+                      <div className="absolute inset-0 bg-neutral-900/40 mix-blend-multiply animate-shading" />
+                    </div>
+                    
+                    {/* Back side of the flipping page (visible after rotating 90deg) */}
+                    <div className="absolute inset-0 bg-[#FBF9F4] shadow-lg rounded-2xl border border-neutral-300/40 backface-hidden rotate-y-180 flex flex-col justify-between p-4 overflow-hidden">
+                      <div className="absolute inset-0 grid-paper opacity-50" />
+                      <div className="absolute inset-0 bg-gradient-to-l from-black/10 via-transparent to-black/10 mix-blend-multiply" />
+                      {/* Interactive darkening overlay */}
+                      <div className="absolute inset-0 bg-neutral-900/40 mix-blend-multiply animate-shading" />
+                    </div>
+                  </div>
+                </>
               )}
 
             </div>
@@ -1303,7 +1292,7 @@ export default function App() {
             <div className="w-6 h-6 flex items-center justify-center mb-1.5 text-base group-hover:scale-110 transition-transform">
               ✂️
             </div>
-            <span className="text-[9px] text-neutral-400 uppercase tracking-widest font-mono font-medium">Ransom</span>
+            <span className="text-[9px] text-neutral-400 uppercase tracking-widest font-mono font-medium">Text</span>
           </button>
 
           {/* Stars Scatter Shortcut */}
@@ -1412,6 +1401,7 @@ export default function App() {
         onAddSpread={handleAddBlankSpread}
         onAddChapter={() => setIsChapterModalOpen(true)}
         onDeleteSpread={handleDeleteCurrentSpread}
+        onClose={() => setIsThumbstripOpen(false)}
       />
 
       {/* Chapter Divider details configuration popup */}

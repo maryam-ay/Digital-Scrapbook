@@ -1,6 +1,6 @@
 import React from 'react';
 import { SpreadState } from '../types';
-import { Plus, Trash2, Layers } from 'lucide-react';
+import { Plus, Trash2, Layers, X } from 'lucide-react';
 
 interface ThumbnailStripProps {
   isOpen: boolean;
@@ -10,6 +10,7 @@ interface ThumbnailStripProps {
   onAddSpread: () => void;
   onAddChapter: () => void;
   onDeleteSpread: (index: number) => void;
+  onClose: () => void;
 }
 
 export default function ThumbnailStrip({
@@ -19,7 +20,8 @@ export default function ThumbnailStrip({
   onSelectSpread,
   onAddSpread,
   onAddChapter,
-  onDeleteSpread
+  onDeleteSpread,
+  onClose
 }: ThumbnailStripProps) {
   if (!isOpen) return null;
 
@@ -30,18 +32,26 @@ export default function ThumbnailStrip({
         <h3 className="font-mono text-xs uppercase tracking-widest text-amber-500 font-bold flex items-center gap-2">
           <Layers className="w-4 h-4 text-[#E8341A]" /> Page Spreads ({spreads.length})
         </h3>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
           <button
             onClick={onAddChapter}
-            className="px-2.5 py-1 bg-neutral-900 border border-neutral-800 hover:border-amber-400 font-mono text-[10px] text-amber-400 uppercase font-bold rounded-md transition-colors"
+            className="px-2.5 py-1 bg-neutral-900 border border-neutral-800 hover:border-amber-400 font-mono text-[10px] text-amber-400 uppercase font-bold rounded-md transition-colors cursor-pointer"
           >
             + Chapter Divider
           </button>
           <button
             onClick={onAddSpread}
-            className="px-2.5 py-1 bg-[#E8341A] hover:bg-red-600 font-mono text-[10px] uppercase font-bold rounded-md transition-colors"
+            className="px-2.5 py-1 bg-[#E8341A] hover:bg-red-600 font-mono text-[10px] uppercase font-bold rounded-md transition-colors cursor-pointer"
           >
             + Blank Spread
+          </button>
+          <span className="w-px h-5 bg-neutral-800" />
+          <button
+            onClick={onClose}
+            className="p-1 text-neutral-400 hover:text-white hover:bg-neutral-800 rounded transition-colors cursor-pointer"
+            aria-label="Close panel"
+          >
+            <X className="w-4 h-4" />
           </button>
         </div>
       </div>
