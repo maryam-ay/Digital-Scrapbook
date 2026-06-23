@@ -1,0 +1,6 @@
+{
+  "name": "Digital Scrapbook",
+  "description": "A maximalist, chaotic, deeply personal visual journal in the style of a Tokyo trip travel zine with stickers, washi tape, and custom ransom-note typography.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
