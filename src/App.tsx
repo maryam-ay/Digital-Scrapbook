@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import { ScrapbookState, SpreadState, ScrapItem, PageState, RansomWord } from './types';
 import { STICKER_TEMPLATES } from './data/stickers';
 import { TAPE_PATTERNS } from './data/tapePatterns';
@@ -1962,6 +1963,7 @@ export default function App() {
         </div>
       )}
 
+      <Analytics />
     </div>
   );
 }
