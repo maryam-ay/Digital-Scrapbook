@@ -24,7 +24,7 @@ export default function SpiralBinding({ onClose }: SpiralBindingProps) {
             e.stopPropagation();
             onClose();
           }}
-          className="absolute top-[-10px] left-1/2 -translate-x-1/2 w-4 h-16 bg-[#E8341A] hover:bg-red-700 shadow-lg border-x border-b border-black/30 z-50 cursor-pointer transition-all hover:h-20 flex flex-col items-center justify-end pb-2.5 group pointer-events-auto rounded-b"
+          className="absolute top-[-10px] left-1/2 -translate-x-1/2 sm:left-1/2 sm:-translate-x-1/2 max-sm:right-4 max-sm:left-auto max-sm:translate-x-0 w-4.5 h-16 bg-[#E8341A] hover:bg-red-700 shadow-lg border-x border-b border-black/30 z-50 cursor-pointer transition-all hover:h-20 flex flex-col items-center justify-end pb-2.5 group pointer-events-auto rounded-b"
           title="Close Book & Return to Cover"
         >
           {/* Elegant ribbon end fold shadow */}

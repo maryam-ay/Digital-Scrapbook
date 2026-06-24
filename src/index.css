@@ -62,40 +62,40 @@
 /* 3D Physical Page Turn Animations with Peeling Arc and Shading */
 @keyframes flip-forward {
   0% {
-    transform: rotateY(0deg) rotateZ(0deg) translateY(0px);
+    transform: rotateY(0deg) skewY(0deg) translateY(0px) scale(1);
     box-shadow: 0 4px 10px rgba(0,0,0,0.1);
   }
   35% {
-    /* Lift up from bottom-right corner slightly to simulate peeling */
-    transform: rotateY(-55deg) rotateZ(-2deg) translateY(-8px) scale(1.02);
-    box-shadow: -10px 15px 30px rgba(0,0,0,0.22);
+    /* Soft cylindrical curl bend */
+    transform: rotateY(-60deg) skewY(-3.5deg) translateY(-10px) scale(1.03);
+    box-shadow: -15px 20px 35px rgba(0,0,0,0.28);
   }
   70% {
-    transform: rotateY(-125deg) rotateZ(-1deg) translateY(-4px) scale(1.01);
+    transform: rotateY(-130deg) skewY(-1.5deg) translateY(-4px) scale(1.015);
     box-shadow: -5px 10px 20px rgba(0,0,0,0.15);
   }
   100% {
-    transform: rotateY(-180deg) rotateZ(0deg) translateY(0px);
+    transform: rotateY(-180deg) skewY(0deg) translateY(0px) scale(1);
     box-shadow: 0 2px 5px rgba(0,0,0,0.05);
   }
 }
 
 @keyframes flip-backward {
   0% {
-    transform: rotateY(0deg) rotateZ(0deg) translateY(0px);
+    transform: rotateY(0deg) skewY(0deg) translateY(0px) scale(1);
     box-shadow: 0 4px 10px rgba(0,0,0,0.1);
   }
   35% {
-    /* Lift up from bottom-left corner slightly to simulate peeling */
-    transform: rotateY(55deg) rotateZ(2deg) translateY(-8px) scale(1.02);
-    box-shadow: 10px 15px 30px rgba(0,0,0,0.22);
+    /* Soft cylindrical curl bend */
+    transform: rotateY(60deg) skewY(3.5deg) translateY(-10px) scale(1.03);
+    box-shadow: 15px 20px 35px rgba(0,0,0,0.28);
   }
   70% {
-    transform: rotateY(125deg) rotateZ(1deg) translateY(-4px) scale(1.01);
+    transform: rotateY(130deg) skewY(1.5deg) translateY(-4px) scale(1.015);
     box-shadow: 5px 10px 20px rgba(0,0,0,0.15);
   }
   100% {
-    transform: rotateY(180deg) rotateZ(0deg) translateY(0px);
+    transform: rotateY(180deg) skewY(0deg) translateY(0px) scale(1);
     box-shadow: 0 2px 5px rgba(0,0,0,0.05);
   }
 }

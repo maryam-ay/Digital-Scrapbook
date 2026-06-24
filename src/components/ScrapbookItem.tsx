@@ -233,11 +233,23 @@ export default function ScrapbookItem({
             )}
             
             {/* Hand-written styled caption helper inside polaroid border */}
-            {item.text && (
-              <div className="absolute bottom-2 left-0 right-0 text-center font-caveat text-sm text-neutral-800 truncate px-2 select-none pointer-events-none">
-                {item.text}
-              </div>
-            )}
+            <div className="absolute bottom-1 left-1.5 right-1.5 text-center font-caveat text-sm text-neutral-800 z-10">
+              {isSelected ? (
+                <input
+                  type="text"
+                  value={item.text || ''}
+                  onChange={(e) => onUpdate(item.id, { text: e.target.value })}
+                  onClick={(e) => e.stopPropagation()}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  placeholder="Type a caption..."
+                  className="w-full text-center bg-transparent border-b border-dashed border-neutral-300 focus:border-neutral-500 font-caveat text-sm focus:outline-none placeholder-neutral-400 select-text"
+                />
+              ) : (
+                <div className="truncate px-1 select-none pointer-events-none min-h-[1.25rem]">
+                  {item.text || ''}
+                </div>
+              )}
+            </div>
           </div>
         );
 
@@ -332,6 +344,10 @@ export default function ScrapbookItem({
     <div
       ref={itemRef}
       onPointerDown={handleDragStart}
+      onClick={(e) => {
+        e.stopPropagation();
+        onSelect();
+      }}
       className={`absolute select-none cursor-grab active:cursor-grabbing ${isSelected ? 'z-50' : ''}`}
       data-scrapbook-item="true"
       style={{

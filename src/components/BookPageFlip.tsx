@@ -40,9 +40,9 @@ export default function BookPageFlip({
       maxHeight: 1000,
       drawShadow: true,
       flippingTime: 700,
-      usePortrait: true,
+      usePortrait: false,
       useMouseEvents: true,
-      showCover: true
+      showCover: false
     });
 
     pageFlipRef.current = pageFlip;

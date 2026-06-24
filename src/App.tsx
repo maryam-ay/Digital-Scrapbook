@@ -28,7 +28,8 @@ import {
   Info,
   Calendar,
   X,
-  Type
+  Type,
+  RotateCcw
 } from 'lucide-react';
 
 // Pre-seeded initial state for a gorgeous first load
@@ -329,6 +330,23 @@ export default function App() {
 
   // Core Scrapbook State
   const [spreads, setSpreads] = useState<SpreadState[]>([]);
+  const [history, setHistory] = useState<SpreadState[][]>([]);
+
+  const setSpreadsWithHistory = (newSpreads: SpreadState[], skipHistory = false) => {
+    if (!skipHistory) {
+      setHistory(prev => [...prev, spreads]);
+    }
+    setSpreads(newSpreads);
+  };
+
+  const handleUndo = () => {
+    if (history.length === 0) return;
+    const previousSpreads = history[history.length - 1];
+    setHistory(prev => prev.slice(0, prev.length - 1));
+    setSpreads(previousSpreads);
+    saveToLocalStorage(previousSpreads, currentSpreadIndex);
+  };
+
   const [currentSpreadIndex, setCurrentSpreadIndex] = useState(0);
 
   // Selection state
@@ -361,9 +379,9 @@ export default function App() {
   const [authorName, setAuthorName] = useState(() => {
     try {
       const saved = localStorage.getItem('scrapbook-author-name');
-      return saved || 'Akanbi Maryam';
+      return saved !== null ? saved : '';
     } catch {
-      return 'Akanbi Maryam';
+      return '';
     }
   });
 
@@ -551,7 +569,7 @@ export default function App() {
       };
     });
 
-    setSpreads(updatedSpreads);
+    setSpreadsWithHistory(updatedSpreads);
     setSelectedItemId(newItem.id);
     setSelectedItemPage(pageSide);
     saveToLocalStorage(updatedSpreads);
@@ -581,7 +599,7 @@ export default function App() {
       };
     });
 
-    setSpreads(updatedSpreads);
+    setSpreadsWithHistory(updatedSpreads);
     saveToLocalStorage(updatedSpreads);
   };
 
@@ -603,7 +621,7 @@ export default function App() {
       };
     });
 
-    setSpreads(updatedSpreads);
+    setSpreadsWithHistory(updatedSpreads);
     setSelectedItemId(null);
     saveToLocalStorage(updatedSpreads);
   };
@@ -786,7 +804,7 @@ export default function App() {
       };
     });
 
-    setSpreads(updatedSpreads);
+    setSpreadsWithHistory(updatedSpreads);
     saveToLocalStorage(updatedSpreads);
 
     // Cute visual or audio pop feedback
@@ -827,7 +845,7 @@ export default function App() {
           src,
           aspectRatio,
           isPolaroid: true,
-          text: 'Tokyo Memory 📸',
+          text: '',
           x: dropX ?? (250 - defaultWidth / 2),
           y: dropY ?? (325 - defaultHeight / 2),
           width: defaultWidth,
@@ -889,7 +907,7 @@ export default function App() {
       ...spreads.slice(newIndex)
     ];
 
-    setSpreads(updatedSpreads);
+    setSpreadsWithHistory(updatedSpreads);
     setCurrentSpreadIndex(newIndex);
     setIsChapterModalOpen(false);
     setChapterTitleInput('');
@@ -912,7 +930,7 @@ export default function App() {
       ...spreads.slice(newIndex)
     ];
 
-    setSpreads(updatedSpreads);
+    setSpreadsWithHistory(updatedSpreads);
     setCurrentSpreadIndex(newIndex);
     saveToLocalStorage(updatedSpreads, newIndex);
   };
@@ -923,7 +941,7 @@ export default function App() {
     const updatedSpreads = spreads.filter((_, idx) => idx !== indexToDelete);
     const nextIndex = Math.max(0, indexToDelete - 1);
     
-    setSpreads(updatedSpreads);
+    setSpreadsWithHistory(updatedSpreads);
     setCurrentSpreadIndex(nextIndex);
     saveToLocalStorage(updatedSpreads, nextIndex);
   };
@@ -978,7 +996,7 @@ export default function App() {
       {/* Cover entry screen overlay */}
       {coverState !== 'opened' && (
         <div 
-          className="fixed inset-0 bg-[#0C0806] z-[100] flex items-center justify-center p-4 overflow-hidden select-none transition-opacity duration-[700ms] ease-in-out"
+          className="fixed inset-0 bg-[#0C0806] z-[100] flex items-center justify-center p-0 sm:p-4 overflow-hidden select-none transition-opacity duration-[700ms] ease-in-out"
           style={{
             opacity: (coverState === 'opening' || coverState === 'closing') ? 0 : 1,
             pointerEvents: (coverState === 'opening' || coverState === 'closing') ? 'none' : 'auto'
@@ -990,7 +1008,7 @@ export default function App() {
           {/* Perspective container */}
           <div className="perspective-2000 w-full h-full flex items-center justify-center relative">
             <div
-              className="w-[85%] sm:w-[48%] max-w-[620px] h-full max-h-[calc(100vh-220px)] aspect-[0.8] rounded-2xl relative select-none"
+              className="w-full h-full sm:w-[48%] sm:max-w-[620px] sm:h-auto sm:max-h-[calc(100vh-220px)] sm:aspect-[0.8] rounded-none sm:rounded-2xl relative select-none"
               style={{
                 backgroundColor: '#1C1410',
                 backgroundImage: `
@@ -1063,6 +1081,7 @@ export default function App() {
                   {/* Open Button with elegant hover/active states */}
                   <button
                     onClick={() => {
+                      setCurrentSpreadIndex(0); // Always start on the first page when opened!
                       setCoverState('opening');
                       setTimeout(() => {
                         setCoverState('opened');
@@ -1177,6 +1196,31 @@ export default function App() {
             >
               <span>Pages</span>
             </button>
+
+            {/* Undo button */}
+            <button
+              onClick={handleUndo}
+              disabled={history.length === 0}
+              className={`p-1.5 sm:p-2 bg-black/40 border rounded-lg text-[11px] font-mono flex items-center gap-1.5 cursor-pointer transition-all active:scale-95 ${
+                history.length === 0
+                  ? 'opacity-40 cursor-not-allowed text-neutral-500 border-white/5 bg-black/20'
+                  : 'text-amber-400 border-white/10 hover:border-amber-400/50 hover:text-amber-300'
+              }`}
+              title="Undo Last Action"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Undo</span>
+            </button>
+
+            {/* Export button */}
+            <button
+              onClick={exportSpreadAsPNG}
+              className="p-1.5 sm:p-2 bg-black/40 text-emerald-400 border border-white/10 hover:border-emerald-400/50 hover:text-emerald-300 rounded-lg text-[11px] font-mono flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
+              title="Export Spread as PNG"
+            >
+              <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" />
+              <span className="hidden sm:inline">Export</span>
+            </button>
           </div>
         </div>
       </header>
@@ -1192,8 +1236,6 @@ export default function App() {
           /* MOBILE SINGLE PAGE MODE WITH SWIPING AND COMPACT WORKSPACE */
           <div 
             className="w-full h-full flex flex-col items-center justify-between p-3 select-none"
-            onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
           >
             {/* Simple page header/tab switcher for mobile */}
             <div className="flex items-center justify-between w-full max-w-[460px] bg-[#111111]/90 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 shadow-lg text-xs font-mono shrink-0 z-20">
@@ -1391,11 +1433,6 @@ export default function App() {
                   )}
                 </div>
               )}
-            </div>
-
-            {/* Compact footer swipe helper */}
-            <div className="text-[10px] text-neutral-500 font-mono tracking-wider uppercase shrink-0 py-1 select-none">
-              Swipe Left/Right to turn page
             </div>
           </div>
         ) : (
@@ -1762,30 +1799,6 @@ export default function App() {
               ✂️
             </div>
             <span className="text-[9px] text-neutral-400 uppercase tracking-widest font-mono font-medium">Text</span>
-          </button>
-
-          {/* Stars Scatter Shortcut */}
-          <button
-            onClick={handleScatterStars}
-            className="flex flex-col items-center group cursor-pointer text-neutral-400 hover:text-white transition-colors"
-          >
-            <div className="w-6 h-6 flex items-center justify-center mb-1.5 text-base text-[#F5C842] group-hover:scale-120 transition-transform">
-              ★
-            </div>
-            <span className="text-[9px] text-neutral-400 uppercase tracking-widest font-mono font-medium">Scatter</span>
-          </button>
-
-          <span className="h-6 w-[1px] bg-white/10 hidden sm:block" />
-
-          {/* Export button */}
-          <button
-            onClick={exportSpreadAsPNG}
-            className="flex flex-col items-center group cursor-pointer text-neutral-400 hover:text-white transition-colors"
-          >
-            <div className="w-6 h-6 flex items-center justify-center mb-1.5 text-base group-hover:scale-110 transition-transform">
-              💾
-            </div>
-            <span className="text-[9px] text-neutral-400 uppercase tracking-widest font-mono font-medium">Export</span>
           </button>
 
         </div>
