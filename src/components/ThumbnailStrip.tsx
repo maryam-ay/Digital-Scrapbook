@@ -76,20 +76,32 @@ export default function ThumbnailStrip({
                 }`}
               >
                 {spread.isChapterDivider ? (
-                  // Chapter Divider Preview
-                  <div 
-                    className="w-full h-full flex items-center justify-center p-1.5 font-mono text-center overflow-hidden"
-                    style={{ backgroundColor: spread.chapterColor || '#E8341A' }}
-                  >
-                    <span className="text-[10px] font-black text-white uppercase tracking-tight line-clamp-2">
-                      {spread.chapterTitle || 'CHAPTER'}
-                    </span>
-                  </div>
+                  // Chapter Divider Preview (Left page is colored divider, right is white/neutral grid)
+                  <>
+                    <div 
+                      className="flex-1 flex items-center justify-center p-1.5 font-mono text-center overflow-hidden relative"
+                      style={{ backgroundColor: spread.chapterColor || '#E8341A' }}
+                    >
+                      <div className="absolute inset-0 grid-paper opacity-10" />
+                      <span className="text-[7px] font-black text-white uppercase tracking-tight line-clamp-2">
+                        {spread.chapterTitle || 'CH'}
+                      </span>
+                    </div>
+                    {/* Spine */}
+                    <div className="w-1 bg-neutral-400 h-full z-10 shadow-inner" />
+                    {/* Right Page Preview */}
+                    <div className="flex-1 bg-[#FBF9F4] flex items-center justify-center relative">
+                      <div className="absolute inset-0 grid-paper opacity-30" />
+                      {spread.rightPage.items.length > 0 && (
+                        <div className="w-2 h-2 rounded-full bg-neutral-800/40" />
+                      )}
+                    </div>
+                  </>
                 ) : (
                   // Regular Two-Page Spread Preview
                   <>
                     {/* Left Page Preview */}
-                    <div className="flex-1 bg-[#F8F6F2] border-r border-neutral-300 flex items-center justify-center relative">
+                    <div className="flex-1 bg-[#FBF9F4] border-r border-neutral-300 flex items-center justify-center relative">
                       <div className="absolute inset-0 grid-paper opacity-30" />
                       {spread.leftPage.items.length > 0 && (
                         <div className="w-2.5 h-2.5 rounded-full bg-neutral-800/40" />
@@ -98,7 +110,7 @@ export default function ThumbnailStrip({
                     {/* Spine */}
                     <div className="w-1 bg-neutral-400 h-full z-10 shadow-inner" />
                     {/* Right Page Preview */}
-                    <div className="flex-1 bg-[#F8F6F2] flex items-center justify-center relative">
+                    <div className="flex-1 bg-[#FBF9F4] flex items-center justify-center relative">
                       <div className="absolute inset-0 grid-paper opacity-30" />
                       {spread.rightPage.items.length > 0 && (
                         <div className="w-2.5 h-2.5 rounded-full bg-neutral-800/40" />

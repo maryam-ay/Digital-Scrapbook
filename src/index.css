@@ -1,8 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Anton&family=Righteous&family=Special+Elite&family=Permanent+Marker&family=Alfa+Slab+One&family=VT323&family=Bebas+Neue&family=Lilita+One&family=Caveat:wght@400;700&family=Patrick+Hand&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;700&family=Anton&family=Righteous&family=Special+Elite&family=Permanent+Marker&family=Alfa+Slab+One&family=VT323&family=Bebas+Neue&family=Lilita+One&family=Caveat:wght@400;700&family=Patrick+Hand&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&display=swap');
 @import "tailwindcss";
 
 @theme {
   --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-dm-mono: "DM Mono", monospace;
   --font-anton: "Anton", sans-serif;
   --font-righteous: "Righteous", sans-serif;
   --font-special-elite: "Special Elite", monospace;
@@ -13,6 +14,7 @@
   --font-lilita-one: "Lilita One", cursive;
   --font-caveat: "Caveat", cursive;
   --font-patrick-hand: "Patrick Hand", cursive;
+  --font-playfair: "Playfair Display", serif;
 }
 
 /* Custom Scrollbar */

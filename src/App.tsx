@@ -9,6 +9,7 @@ import TapeSelector from './components/TapeSelector';
 import RansomTextCreator from './components/RansomTextCreator';
 import CameraOverlay from './components/CameraOverlay';
 import ThumbnailStrip from './components/ThumbnailStrip';
+import ZoomableBook from './components/ZoomableBook';
 import html2canvas from 'html2canvas';
 
 import {
@@ -352,6 +353,100 @@ export default function App() {
   const [isChapterModalOpen, setIsChapterModalOpen] = useState(false);
   const [chapterTitleInput, setChapterTitleInput] = useState('');
   const [chapterColorInput, setChapterColorInput] = useState('#E8341A');
+
+  // Cover entry state
+  const [coverState, setCoverState] = useState<'closed' | 'opening' | 'opened' | 'closing'>('closed');
+
+  // Author name state
+  const [authorName, setAuthorName] = useState(() => {
+    try {
+      const saved = localStorage.getItem('scrapbook-author-name');
+      return saved || 'Akanbi Maryam';
+    } catch {
+      return 'Akanbi Maryam';
+    }
+  });
+
+  const handleAuthorNameChange = (name: string) => {
+    setAuthorName(name);
+    try {
+      localStorage.setItem('scrapbook-author-name', name);
+    } catch (e) {
+      console.warn(e);
+    }
+  };
+
+  // Mobile responsiveness state
+  const [isMobile, setIsMobile] = useState(false);
+  const [activeMobilePage, setActiveMobilePage] = useState<'left' | 'right'>('left');
+  const [mobileScale, setMobileScale] = useState(1);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (mobile) {
+        const availableWidth = window.innerWidth - 24;
+        const availableHeight = window.innerHeight - 200;
+        const scaleW = availableWidth / 460;
+        const scaleH = availableHeight / 575;
+        setMobileScale(Math.min(scaleW, scaleH, 1));
+      }
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const touchStartX = useRef<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    const touchEndX = e.changedTouches[0].clientX;
+    const diffX = touchStartX.current - touchEndX;
+
+    if (Math.abs(diffX) > 50) {
+      if (diffX > 0) {
+        handleMobileNext();
+      } else {
+        handleMobilePrev();
+      }
+    }
+    touchStartX.current = null;
+  };
+
+  const handleMobileNext = () => {
+    if (activeMobilePage === 'left') {
+      setActiveMobilePage('right');
+    } else {
+      if (currentSpreadIndex < spreads.length - 1) {
+        setCurrentSpreadIndex(currentSpreadIndex + 1);
+        setActiveMobilePage('left');
+      }
+    }
+  };
+
+  const handleMobilePrev = () => {
+    if (activeMobilePage === 'right') {
+      setActiveMobilePage('left');
+    } else {
+      if (currentSpreadIndex > 0) {
+        setCurrentSpreadIndex(currentSpreadIndex - 1);
+        setActiveMobilePage('right');
+      }
+    }
+  };
+
+  const handleCloseBook = () => {
+    setCoverState('closing');
+    setTimeout(() => {
+      setCoverState('closed');
+    }, 50);
+  };
 
   // Load state on mount
   useEffect(() => {
@@ -880,16 +975,140 @@ export default function App() {
   return (
     <div className="h-screen max-h-screen overflow-hidden bg-[#1A1A18] text-white flex flex-col font-sans select-none relative">
       
+      {/* Cover entry screen overlay */}
+      {coverState !== 'opened' && (
+        <div 
+          className="fixed inset-0 bg-[#0C0806] z-[100] flex items-center justify-center p-4 overflow-hidden select-none transition-opacity duration-[700ms] ease-in-out"
+          style={{
+            opacity: (coverState === 'opening' || coverState === 'closing') ? 0 : 1,
+            pointerEvents: (coverState === 'opening' || coverState === 'closing') ? 'none' : 'auto'
+          }}
+        >
+          {/* Atmos ambient dark room lighting */}
+          <div className="absolute inset-0 bg-radial-gradient from-transparent to-[#030201] opacity-90 pointer-events-none" />
+          
+          {/* Perspective container */}
+          <div className="perspective-2000 w-full h-full flex items-center justify-center relative">
+            <div
+              className="w-[85%] sm:w-[48%] max-w-[620px] h-full max-h-[calc(100vh-220px)] aspect-[0.8] rounded-2xl relative select-none"
+              style={{
+                backgroundColor: '#1C1410',
+                backgroundImage: `
+                  repeating-linear-gradient(
+                    45deg,
+                    rgba(255,255,255,0.015) 0px,
+                    rgba(255,255,255,0.015) 1px,
+                    transparent 1px,
+                    transparent 4px
+                  ),
+                  repeating-linear-gradient(
+                    -45deg,
+                    rgba(255,255,255,0.015) 0px,
+                    rgba(255,255,255,0.015) 1px,
+                    transparent 1px,
+                    transparent 4px
+                  ),
+                  radial-gradient(circle at center, rgba(255,255,255,0.02) 0%, rgba(0,0,0,0.4) 100%)
+                `,
+                border: '1px solid rgba(255,255,255,0.08)',
+                boxShadow: '6px 10px 30px rgba(0,0,0,0.6), 2px 4px 10px rgba(0,0,0,0.3)',
+                transformStyle: 'preserve-3d',
+                transformOrigin: 'left center',
+                transition: 'transform 700ms cubic-bezier(0.4, 0, 0.2, 1), opacity 700ms ease-in-out',
+                transform: (coverState === 'opening' || coverState === 'closing') ? 'rotateY(-180deg) scale(0.95)' : 'rotateY(0deg)',
+                opacity: (coverState === 'opening' || coverState === 'closing') ? 0 : 1,
+              }}
+            >
+              {/* Spine Shadow on the left edge */}
+              <div className="absolute left-0 top-0 bottom-0 w-[8px] bg-black/45 z-20 pointer-events-none rounded-l-2xl" />
+              <div className="absolute left-[8px] top-0 bottom-0 w-[1px] bg-white/5 z-20 pointer-events-none" />
+
+              {/* Embossed internal border frame */}
+              <div className="absolute inset-4 sm:inset-6 border border-[#C39C55]/20 rounded-xl pointer-events-none" />
+
+              {/* Content Container */}
+              <div className="absolute inset-0 flex flex-col justify-between p-8 sm:p-12 text-center text-[#E2C285]">
+                
+                {/* TOP: Header Label */}
+                <div className="space-y-1 mt-4">
+                  <span className="text-[10px] sm:text-xs font-mono uppercase tracking-[0.25em] text-[#C39C55]/60 block">
+                    WELCOME TO
+                  </span>
+                  <div className="w-8 h-[1px] bg-[#C39C55]/30 mx-auto mt-2" />
+                </div>
+
+                {/* CENTER: Title & Ornament */}
+                <div className="space-y-4 my-auto">
+                  <h1 className="font-dm-mono font-bold text-lg sm:text-2xl md:text-3xl lg:text-4xl xl:text-[42px] tracking-tight uppercase leading-tight select-none py-1"
+                      style={{
+                        background: 'linear-gradient(135deg, #FFEAB5 0%, #C39C55 50%, #8A6421 100%)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                        filter: 'drop-shadow(0px 1px 1px rgba(255,255,255,0.1)) drop-shadow(0px -1px 1px rgba(0,0,0,0.8))'
+                      }}>
+                    MY DIGITAL<br/>SCRAPBOOK
+                  </h1>
+                  
+                  {/* Flourish ornament */}
+                  <div className="flex items-center justify-center gap-2 opacity-55">
+                    <div className="w-12 h-[1px] bg-gradient-to-r from-transparent to-[#C39C55]" />
+                    <span className="text-xs">✦</span>
+                    <div className="w-12 h-[1px] bg-gradient-to-l from-transparent to-[#C39C55]" />
+                  </div>
+                </div>
+
+                {/* LOWER: Open Button & Details */}
+                <div className="space-y-6 mb-4 flex flex-col items-center">
+                  
+                  {/* Open Button with elegant hover/active states */}
+                  <button
+                    onClick={() => {
+                      setCoverState('opening');
+                      setTimeout(() => {
+                        setCoverState('opened');
+                      }, 700);
+                    }}
+                    className="px-6 py-2.5 bg-gradient-to-b from-[#E2C285]/20 to-transparent hover:from-[#E2C285]/35 hover:to-[#E2C285]/10 text-[#E2C285] hover:text-white rounded-lg border border-[#C39C55]/40 hover:border-[#FFEAB5] shadow-lg cursor-pointer font-mono text-xs uppercase tracking-widest active:scale-95 transition-all duration-300 relative overflow-hidden group"
+                    style={{
+                      textShadow: '0px 1px 2px rgba(0,0,0,0.6)'
+                    }}
+                  >
+                    Open Journal
+                  </button>
+
+                  {/* Details block */}
+                  <div className="text-[10px] font-mono text-[#C39C55]/50 tracking-wider space-y-1 w-full max-w-[240px]">
+                    <p className="uppercase text-[9px] text-[#C39C55]/30">CREATED BY</p>
+                    <div className="relative mt-1">
+                      <input
+                        type="text"
+                        value={authorName}
+                        onChange={(e) => handleAuthorNameChange(e.target.value)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="bg-neutral-950/40 hover:bg-neutral-950/70 focus:bg-neutral-950 border border-[#C39C55]/20 hover:border-[#C39C55]/40 focus:border-[#C39C55] text-[#FFEAB5] font-medium tracking-widest text-[11px] sm:text-xs text-center focus:outline-none py-1.5 px-3 rounded-md transition-all w-full font-mono select-text"
+                        placeholder="Enter Name"
+                      />
+                    </div>
+                  </div>
+
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* HEADER BAR */}
-      <header className="px-6 py-2.5 bg-neutral-950/85 backdrop-blur-md border-b border-white/5 flex items-center justify-between select-none shrink-0 z-10">
+      <header className="px-3 sm:px-6 py-2 bg-neutral-950/85 backdrop-blur-md border-b border-white/5 flex items-center justify-between select-none shrink-0 z-10 gap-2">
         {/* LEFT BRANDING */}
-        <div className="flex items-center gap-3 shrink-0">
-          <BookOpen className="w-5 h-5 text-[#E8341A]" />
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-[#E8341A]" />
           <div>
-            <h1 className="font-mono text-sm font-black uppercase tracking-widest text-[#F8F6F2]">
-              Digital Scrapbook
+            <h1 className="font-mono text-[11px] sm:text-sm font-black uppercase tracking-widest text-[#F8F6F2]">
+              {isMobile ? 'SCRAPBOOK' : 'Digital Scrapbook'}
             </h1>
-            <p className="text-[10px] text-neutral-500 font-mono hidden sm:block">Creative Journal & Collage Space</p>
+            <p className="text-[9px] text-neutral-500 font-mono hidden sm:block">Creative Journal & Collage Space</p>
           </div>
         </div>
 
@@ -908,7 +1127,7 @@ export default function App() {
               <span className="text-white/10 font-mono">|</span>
               <button
                 onClick={handleShufflePrompt}
-                className="text-neutral-400 hover:text-[#E8341A] transition-colors font-mono font-bold text-[10px] cursor-pointer hover:underline uppercase shrink-0"
+                className="text-neutral-400 hover:text-[#E8341A] transition-colors font-mono font-bold text-[10px] cursor-pointer hover:underline uppercase shrink-0 bg-transparent border-0"
               >
                 Shuffle
               </button>
@@ -917,20 +1136,30 @@ export default function App() {
         </div>
 
         {/* RIGHT TOP ACTION BAR */}
-        <div className="flex items-center gap-3 shrink-0">
-          <div className="flex items-center bg-black/40 px-3.5 py-1 rounded-full text-xs font-mono border border-white/10 text-neutral-300">
-            <span className="text-[#E8341A] font-bold mr-1">{currentSpreadIndex + 1}</span> / {spreads.length} SPREADS
+        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+          <div className="hidden xs:flex items-center bg-black/40 px-2 sm:px-3.5 py-1 rounded-full text-[10px] sm:text-xs font-mono border border-white/10 text-neutral-300">
+            <span className="text-[#E8341A] font-bold mr-1">{currentSpreadIndex + 1}</span> / {spreads.length}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             {/* Quick scatter */}
             <button
               onClick={handleScatterStars}
-              className="p-2 bg-black/40 border border-white/10 hover:border-amber-400/50 rounded-lg text-amber-400 hover:text-amber-300 transition-all active:scale-95 flex items-center gap-1 text-xs font-mono cursor-pointer"
+              className="p-1.5 sm:p-2 bg-black/40 border border-white/10 hover:border-amber-400/50 rounded-lg text-amber-400 hover:text-amber-300 transition-all active:scale-95 flex items-center gap-1 text-[11px] font-mono cursor-pointer"
               title="Scatter Gold Stars"
             >
-              <Star className="w-4 h-4 fill-amber-400" />
+              <Star className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-amber-400" />
               <span className="hidden lg:inline">Scatter Stars</span>
+            </button>
+
+            {/* Book Cover return button */}
+            <button
+              onClick={handleCloseBook}
+              className="p-1.5 sm:p-2 bg-black/40 text-neutral-300 border border-white/10 hover:border-white/20 hover:text-[#E8341A] rounded-lg text-[11px] font-mono flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
+              title="Close Book & Return to Cover"
+            >
+              <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#E8341A]" />
+              <span className="hidden sm:inline">Cover</span>
             </button>
 
             {/* Thumbnail toggle */}
@@ -940,7 +1169,7 @@ export default function App() {
                 setIsStickerOpen(false);
                 setIsTapeOpen(false);
               }}
-              className={`p-2 rounded-lg text-xs font-mono flex items-center gap-1.5 cursor-pointer border transition-all ${
+              className={`p-1.5 sm:p-2 rounded-lg text-[11px] font-mono flex items-center gap-1.5 cursor-pointer border transition-all ${
                 isThumbstripOpen
                   ? 'bg-black/80 text-[#E8341A] border-[#E8341A]/50'
                   : 'bg-black/40 text-neutral-300 border-white/10 hover:border-white/20'
@@ -953,244 +1182,484 @@ export default function App() {
       </header>
 
       {/* MAIN SCRAPBOOK WORKSPACE */}
-      <main className="flex-1 flex items-center justify-center px-12 py-4 md:px-16 relative select-none overflow-hidden bg-[#1A1A18]" style={{ minHeight: 0 }}>
-        
-        {/* Left Page Page-Turn Button (Sits OUTSIDE the book on the far left edge) */}
-        {currentSpreadIndex > 0 && !isFlipping && (
-          <button
-            onClick={() => triggerPageTurn('backward')}
-            className="absolute left-6 top-1/2 -translate-y-1/2 w-11 h-11 bg-[#FBF9F4] text-[#C2513C] hover:text-[#E8341A] rounded-full flex items-center justify-center shadow-2xl border border-neutral-300/30 transition-all z-35 hover:scale-110 active:scale-95 cursor-pointer"
-            title="Previous Page (Left Arrow)"
+      <main 
+        className={`flex-1 flex items-center justify-center relative select-none overflow-hidden ${
+          isMobile ? 'px-0 py-0 bg-[#141414]' : 'px-12 py-4 md:px-16 bg-[#1A1A18]'
+        }`} 
+        style={{ minHeight: 0 }}
+      >
+        {isMobile ? (
+          /* MOBILE SINGLE PAGE MODE WITH SWIPING AND COMPACT WORKSPACE */
+          <div 
+            className="w-full h-full flex flex-col items-center justify-between p-3 select-none"
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
           >
-            <ChevronLeft className="w-6 h-6 stroke-[3px]" />
-          </button>
-        )}
-
-        {/* Right Page Page-Turn Button (Sits OUTSIDE the book on the far right edge) */}
-        {currentSpreadIndex < spreads.length - 1 && !isFlipping && (
-          <button
-            onClick={() => triggerPageTurn('forward')}
-            className="absolute right-6 top-1/2 -translate-y-1/2 w-11 h-11 bg-[#FBF9F4] text-[#C2513C] hover:text-[#E8341A] rounded-full flex items-center justify-center shadow-2xl border border-neutral-300/30 transition-all z-35 hover:scale-110 active:scale-95 cursor-pointer"
-            title="Next Page (Right Arrow)"
-          >
-            <ChevronRight className="w-6 h-6 stroke-[3px]" />
-          </button>
-        )}
-
-        {/* THE WIDE FLAT BOOK SPREAD CONTAINER */}
-        <div 
-          className="relative w-[96%] max-w-[1240px] h-full max-h-[calc(100vh-220px)] aspect-[1.6] select-none flex items-center justify-center z-10"
-          onClick={() => setSelectedItemId(null)}
-        >
-          {/* THE BOOK PHYSICAL SIDES LAYOUT */}
-          {currentSpread && (
-            <div 
-              id="scrapbook-book"
-              className="w-full h-full relative flex z-10"
-            >
+            {/* Simple page header/tab switcher for mobile */}
+            <div className="flex items-center justify-between w-full max-w-[460px] bg-[#111111]/90 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 shadow-lg text-xs font-mono shrink-0 z-20">
+              <button
+                onClick={handleMobilePrev}
+                className="p-1.5 text-neutral-300 hover:text-[#E8341A] transition-colors cursor-pointer bg-transparent border-0"
+                title="Previous Page"
+              >
+                <ChevronLeft className="w-5 h-5 stroke-[2.5px]" />
+              </button>
               
-              {/* FLAT CARDBOARD BACKING COVER (sleek board with no rounded book crease/bevels, soft shadows) */}
-              <div className="absolute inset-[-8px] rounded-xl bg-[#2E3430] border border-[#1E2220]/40 shadow-[0_20px_50px_rgba(0,0,0,0.8),inset_0_1px_1px_rgba(255,255,255,0.05)] z-0 pointer-events-none" />
-
-              {/* 1. CHAPTER DIVIDER DISPLAY MODE */}
-              {currentSpread.isChapterDivider ? (
-                <div 
-                  className="w-full h-full rounded-2xl p-8 md:p-16 flex flex-col justify-between relative shadow-2xl overflow-hidden border border-neutral-950/45 select-none animate-[peel-in_0.5s_ease-out] z-10"
-                  style={{ backgroundColor: currentSpread.chapterColor || '#E8341A' }}
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => setActiveMobilePage('left')}
+                  className={`px-3 py-1 rounded-full text-[10px] tracking-wider uppercase font-bold transition-all cursor-pointer border-0 ${
+                    activeMobilePage === 'left' 
+                      ? 'bg-[#E8341A] text-white shadow-md' 
+                      : 'text-neutral-400 hover:text-white bg-transparent'
+                  }`}
                 >
-                  {/* Decorative stamp grid paper backdrop overlay */}
-                  <div className="absolute inset-0 grid-paper opacity-5 pointer-events-none" />
-                  
-                  {/* Mini stamp detail */}
-                  <div className="flex justify-between font-mono text-xs uppercase tracking-widest text-white/50 border-b border-white/25 pb-4 select-none">
-                    <span>TOKYO ZINE VOLUME. 01</span>
-                    <span>SPREAD {currentSpreadIndex + 1}</span>
-                  </div>
+                  {currentSpread?.isChapterDivider ? 'Chapter' : 'Left Page'}
+                </button>
+                <span className="text-neutral-700 font-bold">|</span>
+                <button
+                  onClick={() => setActiveMobilePage('right')}
+                  className={`px-3 py-1 rounded-full text-[10px] tracking-wider uppercase font-bold transition-all cursor-pointer border-0 ${
+                    activeMobilePage === 'right' 
+                      ? 'bg-[#E8341A] text-white shadow-md' 
+                      : 'text-neutral-400 hover:text-white bg-transparent'
+                  }`}
+                >
+                  {currentSpread?.isChapterDivider ? 'Canvas' : 'Right Page'}
+                </button>
+              </div>
 
-                  {/* Huge Ransom-Note Style Chapter Title */}
-                  <div className="my-auto text-center flex flex-col items-center justify-center gap-4 py-8">
-                    <span className="text-xs font-mono uppercase bg-white text-neutral-950 font-bold px-3 py-1 tracking-widest rounded shadow-md select-none animate-pulse">
-                      NOW ENTERING CHAPTER
-                    </span>
-                    <h2 
-                      className="font-sans font-black text-4xl sm:text-5xl md:text-6xl text-white tracking-wider uppercase leading-none break-words max-w-2xl text-shadow-lg"
-                      style={{ fontFamily: 'Anton, sans-serif' }}
-                    >
-                      {currentSpread.chapterTitle}
-                    </h2>
-                  </div>
+              <button
+                onClick={handleMobileNext}
+                className="p-1.5 text-neutral-300 hover:text-[#E8341A] transition-colors cursor-pointer bg-transparent border-0"
+                title="Next Page"
+              >
+                <ChevronRight className="w-5 h-5 stroke-[2.5px]" />
+              </button>
+            </div>
 
-                  {/* Footer details */}
-                  <div className="flex justify-between items-end border-t border-white/25 pt-4">
-                    <div className="font-mono text-[10px] text-white/50 flex flex-col uppercase">
-                      <span>STAMPS & EPHEMERA INC.</span>
-                      <span>LOCAL TIME SEEDED</span>
-                    </div>
-                    
-                    {/* Delete Chapter Spread */}
-                    {spreads.length > 1 && (
-                      <button
+            {/* The Scaled Scrapbook Canvas Area */}
+            <div className="flex-1 w-full flex items-center justify-center relative overflow-hidden">
+              {currentSpread && (
+                <div 
+                  className="relative shadow-[0_15px_40px_rgba(0,0,0,0.6)] shrink-0"
+                  style={{
+                    width: '460px',
+                    height: '575px',
+                    transform: `scale(${mobileScale})`,
+                    transformOrigin: 'center center',
+                    transition: 'transform 0.2s ease-out',
+                  }}
+                >
+                  {activeMobilePage === 'left' ? (
+                    currentSpread.isChapterDivider ? (
+                      /* Left Page: Chapter Divider */
+                      <div 
+                        className="w-full h-full rounded-2xl p-8 flex flex-col justify-between relative shadow-lg overflow-hidden select-none animate-[peel-in_0.3s_ease-out]"
+                        style={{ backgroundColor: currentSpread.chapterColor || '#E8341A' }}
+                      >
+                        <div className="absolute inset-0 grid-paper opacity-5 pointer-events-none" />
+                        
+                        <div className="flex justify-between font-mono text-[10px] uppercase tracking-widest text-white/50 border-b border-white/25 pb-2 select-none">
+                          <span>WELCOME</span>
+                          <span>SPREAD {currentSpreadIndex + 1}</span>
+                        </div>
+
+                        <div className="my-auto text-center flex flex-col items-center justify-center gap-2 py-4">
+                          <span className="text-[9px] font-mono uppercase bg-white text-neutral-950 font-bold px-2 py-0.5 tracking-widest rounded shadow-md select-none">
+                            NOW ENTERING
+                          </span>
+                          <h2 
+                            className="font-sans font-black text-2xl sm:text-3xl text-white tracking-wider uppercase leading-none break-words max-w-full text-shadow-lg"
+                            style={{ fontFamily: 'Anton, sans-serif' }}
+                          >
+                            {currentSpread.chapterTitle}
+                          </h2>
+                        </div>
+
+                        <div className="flex justify-between items-end border-t border-white/25 pt-2">
+                          <div className="font-mono text-[8px] text-white/50 flex flex-col uppercase">
+                            <span>STAMPS & EPHEMERA INC.</span>
+                          </div>
+                          
+                          {spreads.length > 1 && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteCurrentSpread();
+                              }}
+                              className="px-2 py-1 bg-black/40 hover:bg-black/60 rounded text-[8px] font-mono uppercase text-red-300 hover:text-red-200 border border-red-500/30 cursor-pointer flex items-center gap-1 transition-all"
+                            >
+                              <Trash2 className="w-3 h-3" /> Delete Divider
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      /* Left Page: Regular Collage */
+                      <div 
+                        ref={leftPageRef}
+                        onDragOver={handleDragOver}
+                        onDrop={(e) => handleDrop(e, 'left')}
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleDeleteCurrentSpread();
+                          setSelectedItemPage('left');
+                          setSelectedItemId(null);
                         }}
-                        className="px-3 py-1.5 bg-black/40 hover:bg-black/60 rounded-lg text-[10px] font-mono uppercase text-red-300 hover:text-red-200 border border-red-500/30 cursor-pointer flex items-center gap-1 transition-all"
+                        className="w-full h-full rounded-2xl shadow-lg relative overflow-hidden select-none flex flex-col justify-between p-4 z-10 bg-[#FBF9F4] grid-paper"
                       >
-                        <Trash2 className="w-3.5 h-3.5" /> Delete Divider
-                      </button>
-                    )}
-                  </div>
+                        <div className="absolute top-3 left-3 select-none flex items-center gap-1 opacity-25">
+                          <div className="w-1.5 h-1.5 rounded-full bg-neutral-900" />
+                          <span className="text-[8px] font-mono uppercase tracking-wider text-neutral-950">LEFT_VERSO</span>
+                        </div>
+
+                        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                          {currentSpread.leftPage.items.map((item) => (
+                            <div key={item.id} className="pointer-events-auto">
+                              <ScrapbookItem
+                                item={item}
+                                isSelected={selectedItemId === item.id}
+                                onSelect={() => {
+                                  setSelectedItemId(item.id);
+                                  setSelectedItemPage('left');
+                                }}
+                                onUpdate={handleUpdateItem}
+                                onDelete={handleDeleteItem}
+                                onBringToFront={handleBringToFront}
+                                onSendToBack={handleSendToBack}
+                                onRestyleRansomWord={handleRestyleRansomWord}
+                              />
+                            </div>
+                          ))}
+                        </div>
+
+                        {currentSpread.leftPage.items.length === 0 && (
+                          <div className="m-auto flex flex-col items-center justify-center p-6 text-center select-none opacity-40 pointer-events-none">
+                            <span className="text-xl">🎟️</span>
+                            <p className="font-caveat text-base text-neutral-800 font-bold mt-1">What happened today?</p>
+                            <p className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest mt-0.5">Drop everything in.</p>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  ) : (
+                    /* Right Page: Regular Collage */
+                    <div 
+                      ref={rightPageRef}
+                      onDragOver={handleDragOver}
+                      onDrop={(e) => handleDrop(e, 'right')}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedItemPage('right');
+                        setSelectedItemId(null);
+                      }}
+                      className="w-full h-full rounded-2xl shadow-lg relative overflow-hidden select-none flex flex-col justify-between p-4 z-10 bg-[#FBF9F4] grid-paper"
+                    >
+                      <div className="absolute top-3 right-3 select-none flex items-center gap-1 opacity-25">
+                        <span className="text-[8px] font-mono uppercase tracking-wider text-neutral-950">RIGHT_VERSO</span>
+                        <div className="w-1.5 h-1.5 rounded-full bg-neutral-900" />
+                      </div>
+
+                      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                        {currentSpread.rightPage.items.map((item) => (
+                          <div key={item.id} className="pointer-events-auto">
+                            <ScrapbookItem
+                              item={item}
+                              isSelected={selectedItemId === item.id}
+                              onSelect={() => {
+                                setSelectedItemId(item.id);
+                                setSelectedItemPage('right');
+                              }}
+                              onUpdate={handleUpdateItem}
+                              onDelete={handleDeleteItem}
+                              onBringToFront={handleBringToFront}
+                              onSendToBack={handleSendToBack}
+                              onRestyleRansomWord={handleRestyleRansomWord}
+                            />
+                          </div>
+                        ))}
+                      </div>
+
+                      {currentSpread.rightPage.items.length === 0 && (
+                        <div className="m-auto flex flex-col items-center justify-center p-6 text-center select-none opacity-40 pointer-events-none">
+                          <span className="text-xl">🌸</span>
+                          <p className="font-caveat text-base text-neutral-800 font-bold mt-1">Empty grid page</p>
+                          <p className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest mt-0.5">Place photo or washi tape.</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
-              ) : (
-                /* 2. REGULAR TWO-PAGE SPREAD COLLAGE MODE */
-                <>
-                  {/* LEFT PAGE CANVASES */}
-                  <div 
-                    ref={leftPageRef}
-                    onDragOver={handleDragOver}
-                    onDrop={(e) => handleDrop(e, 'left')}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedItemPage('left');
-                      setSelectedItemId(null);
-                    }}
-                    className={`w-1/2 h-full rounded-l-2xl shadow-lg relative overflow-hidden select-none border-r border-neutral-300/70 flex flex-col justify-between p-4 z-10 bg-[#FBF9F4] grid-paper`}
-                  >
-                    {/* Tiny watermark branding */}
-                    <div className="absolute top-3 left-3 select-none flex items-center gap-1 opacity-25">
-                      <div className="w-1.5 h-1.5 rounded-full bg-neutral-900" />
-                      <span className="text-[8px] font-mono uppercase tracking-wider text-neutral-950">LEFT_VERSO</span>
-                    </div>
-
-                    {/* Left Page Items */}
-                    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                      {currentSpread.leftPage.items.map((item) => (
-                        <div key={item.id} className="pointer-events-auto">
-                          <ScrapbookItem
-                            item={item}
-                            isSelected={selectedItemId === item.id}
-                            onSelect={() => {
-                              setSelectedItemId(item.id);
-                              setSelectedItemPage('left');
-                            }}
-                            onUpdate={handleUpdateItem}
-                            onDelete={handleDeleteItem}
-                            onBringToFront={handleBringToFront}
-                            onSendToBack={handleSendToBack}
-                            onRestyleRansomWord={handleRestyleRansomWord}
-                          />
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Page Empty Hint */}
-                    {currentSpread.leftPage.items.length === 0 && (
-                      <div className="m-auto flex flex-col items-center justify-center p-6 text-center select-none opacity-40 pointer-events-none">
-                        <span className="text-xl">🎟️</span>
-                        <p className="font-caveat text-base text-neutral-800 font-bold mt-1">What happened today?</p>
-                        <p className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest mt-0.5">Drop everything in.</p>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* REALISTIC CREASED SPINE GUTTER (No heavy wire/spirals, beautiful parallel shading) */}
-                  <SpiralBinding />
-
-                  {/* RIGHT PAGE CANVASES */}
-                  <div 
-                    ref={rightPageRef}
-                    onDragOver={handleDragOver}
-                    onDrop={(e) => handleDrop(e, 'right')}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedItemPage('right');
-                      setSelectedItemId(null);
-                    }}
-                    className={`w-1/2 h-full rounded-r-2xl shadow-lg relative overflow-hidden select-none flex flex-col justify-between p-4 z-10 bg-[#FBF9F4] grid-paper`}
-                  >
-                    {/* Tiny watermark branding */}
-                    <div className="absolute top-3 right-3 select-none flex items-center gap-1 opacity-25">
-                      <span className="text-[8px] font-mono uppercase tracking-wider text-neutral-950">RIGHT_VERSO</span>
-                      <div className="w-1.5 h-1.5 rounded-full bg-neutral-900" />
-                    </div>
-
-                    {/* Right Page Items */}
-                    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                      {currentSpread.rightPage.items.map((item) => (
-                        <div key={item.id} className="pointer-events-auto">
-                          <ScrapbookItem
-                            item={item}
-                            isSelected={selectedItemId === item.id}
-                            onSelect={() => {
-                              setSelectedItemId(item.id);
-                              setSelectedItemPage('right');
-                            }}
-                            onUpdate={handleUpdateItem}
-                            onDelete={handleDeleteItem}
-                            onBringToFront={handleBringToFront}
-                            onSendToBack={handleSendToBack}
-                            onRestyleRansomWord={handleRestyleRansomWord}
-                          />
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Page Empty Hint */}
-                    {currentSpread.rightPage.items.length === 0 && (
-                      <div className="m-auto flex flex-col items-center justify-center p-6 text-center select-none opacity-40 pointer-events-none">
-                        <span className="text-xl">🌸</span>
-                        <p className="font-caveat text-base text-neutral-800 font-bold mt-1">Empty grid page</p>
-                        <p className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest mt-0.5">Place photo or washi tape.</p>
-                      </div>
-                    )}
-                  </div>
-                </>
               )}
-
-              {/* 3. FLIPPING PAGE OVERLAY (CSS 3D ANIMATION - DUAL SIDED WITH CORNER PEELING) */}
-              {isFlipping && (
-                <>
-                  {/* Under-sheet cast shadows */}
-                  {isFlipping === 'forward' && (
-                    <div className="absolute top-0 bottom-0 left-0 right-0 z-15 pointer-events-none bg-neutral-950/40 rounded-2xl animate-shadow-forward" />
-                  )}
-                  {isFlipping === 'backward' && (
-                    <div className="absolute top-0 bottom-0 left-0 right-0 z-15 pointer-events-none bg-neutral-950/40 rounded-2xl animate-shadow-backward" />
-                  )}
-
-                  {/* Flipping double-sided sheet */}
-                  <div 
-                    className={`absolute top-0 bottom-0 w-1/2 z-40 preserve-3d pointer-events-none ${
-                      isFlipping === 'forward' 
-                        ? 'left-1/2 origin-left animate-flip-forward' 
-                        : 'left-0 origin-right animate-flip-backward'
-                    }`}
-                    style={{
-                      transformStyle: 'preserve-3d'
-                    }}
-                  >
-                    {/* Front side of the flipping page */}
-                    <div className="absolute inset-0 bg-[#FBF9F4] shadow-lg rounded-2xl border border-neutral-300/40 backface-hidden flex flex-col justify-between p-4 overflow-hidden">
-                      <div className="absolute inset-0 grid-paper opacity-50" />
-                      <div className="absolute inset-0 bg-gradient-to-r from-black/10 via-transparent to-black/10 mix-blend-multiply" />
-                      {/* Interactive darkening overlay */}
-                      <div className="absolute inset-0 bg-neutral-900/40 mix-blend-multiply animate-shading" />
-                    </div>
-                    
-                    {/* Back side of the flipping page (visible after rotating 90deg) */}
-                    <div className="absolute inset-0 bg-[#FBF9F4] shadow-lg rounded-2xl border border-neutral-300/40 backface-hidden rotate-y-180 flex flex-col justify-between p-4 overflow-hidden">
-                      <div className="absolute inset-0 grid-paper opacity-50" />
-                      <div className="absolute inset-0 bg-gradient-to-l from-black/10 via-transparent to-black/10 mix-blend-multiply" />
-                      {/* Interactive darkening overlay */}
-                      <div className="absolute inset-0 bg-neutral-900/40 mix-blend-multiply animate-shading" />
-                    </div>
-                  </div>
-                </>
-              )}
-
             </div>
-          )}
-        </div>
+
+            {/* Compact footer swipe helper */}
+            <div className="text-[10px] text-neutral-500 font-mono tracking-wider uppercase shrink-0 py-1 select-none">
+              Swipe Left/Right to turn page
+            </div>
+          </div>
+        ) : (
+          /* DESKTOP DOUBLE PAGE SPREAD MODE (Original layout) */
+          <>
+            {/* Left Page Page-Turn Button */}
+            {currentSpreadIndex > 0 && !isFlipping && (
+              <button
+                onClick={() => triggerPageTurn('backward')}
+                className="absolute left-6 top-1/2 -translate-y-1/2 w-11 h-11 bg-[#FBF9F4] text-[#C2513C] hover:text-[#E8341A] rounded-full flex items-center justify-center shadow-2xl border border-neutral-300/30 transition-all z-35 hover:scale-110 active:scale-95 cursor-pointer"
+                title="Previous Page (Left Arrow)"
+              >
+                <ChevronLeft className="w-6 h-6 stroke-[3px]" />
+              </button>
+            )}
+
+            {/* Right Page Page-Turn Button */}
+            {currentSpreadIndex < spreads.length - 1 && !isFlipping && (
+              <button
+                onClick={() => triggerPageTurn('forward')}
+                className="absolute right-6 top-1/2 -translate-y-1/2 w-11 h-11 bg-[#FBF9F4] text-[#C2513C] hover:text-[#E8341A] rounded-full flex items-center justify-center shadow-2xl border border-neutral-300/30 transition-all z-35 hover:scale-110 active:scale-95 cursor-pointer"
+                title="Next Page (Right Arrow)"
+              >
+                <ChevronRight className="w-6 h-6 stroke-[3px]" />
+              </button>
+            )}
+
+            {/* THE WIDE FLAT BOOK SPREAD CONTAINER */}
+            <div 
+              className="relative w-[96%] max-w-[1240px] h-full max-h-[calc(100vh-220px)] aspect-[1.6] select-none flex items-center justify-center z-10"
+              onClick={() => setSelectedItemId(null)}
+            >
+              <ZoomableBook isDisabled={false}>
+                {/* THE BOOK PHYSICAL SIDES LAYOUT */}
+                {currentSpread && (
+                  <div 
+                    id="scrapbook-book"
+                    className="w-full h-full relative flex z-10"
+                  >
+                    {/* FLAT CARDBOARD BACKING COVER */}
+                    <div className="absolute inset-[-8px] rounded-xl bg-[#2E3430] border border-[#1E2220]/40 shadow-[0_20px_50px_rgba(0,0,0,0.8),inset_0_1px_1px_rgba(255,255,255,0.05)] z-0 pointer-events-none" />
+
+                    {/* 1. CHAPTER DIVIDER DISPLAY MODE */}
+                    {currentSpread.isChapterDivider ? (
+                      <>
+                        {/* Left Page: Chapter Divider */}
+                        <div 
+                          className="w-1/2 h-full rounded-l-2xl p-6 md:p-10 flex flex-col justify-between relative shadow-lg overflow-hidden border-r border-neutral-950/45 select-none animate-[peel-in_0.5s_ease-out] z-10"
+                          style={{ backgroundColor: currentSpread.chapterColor || '#E8341A' }}
+                        >
+                          <div className="absolute inset-0 grid-paper opacity-5 pointer-events-none" />
+                          <div className="flex justify-between font-mono text-[9px] sm:text-xs uppercase tracking-widest text-white/50 border-b border-white/25 pb-2.5 select-none">
+                            <span>TOKYO ZINE VOLUME. 01</span>
+                            <span>SPREAD {currentSpreadIndex + 1}</span>
+                          </div>
+                          <div className="my-auto text-center flex flex-col items-center justify-center gap-2 py-4">
+                            <span className="text-[9px] font-mono uppercase bg-white text-neutral-950 font-bold px-2 py-0.5 tracking-widest rounded shadow-md select-none">
+                              NOW ENTERING CHAPTER
+                            </span>
+                            <h2 
+                              className="font-sans font-black text-2xl sm:text-3xl md:text-4xl text-white tracking-wider uppercase leading-none break-words max-w-full text-shadow-lg"
+                              style={{ fontFamily: 'Anton, sans-serif' }}
+                            >
+                              {currentSpread.chapterTitle}
+                            </h2>
+                          </div>
+                          <div className="flex justify-between items-end border-t border-white/25 pt-2.5">
+                            <div className="font-mono text-[8px] text-white/50 flex flex-col uppercase">
+                              <span>STAMPS & EPHEMERA INC.</span>
+                              <span>LOCAL TIME SEEDED</span>
+                            </div>
+                            {spreads.length > 1 && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteCurrentSpread();
+                                }}
+                                className="px-2 py-1 bg-black/40 hover:bg-black/60 rounded text-[8px] font-mono uppercase text-red-300 hover:text-red-200 border border-red-500/30 cursor-pointer flex items-center gap-1 transition-all"
+                              >
+                                <Trash2 className="w-3 h-3" /> Delete Divider
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Spinal Binding Crease */}
+                        <SpiralBinding onClose={handleCloseBook} />
+
+                        {/* Right Page: Regular Scrapbook Canvas */}
+                        <div 
+                          ref={rightPageRef}
+                          onDragOver={handleDragOver}
+                          onDrop={(e) => handleDrop(e, 'right')}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedItemPage('right');
+                            setSelectedItemId(null);
+                          }}
+                          className="w-1/2 h-full rounded-r-2xl shadow-lg relative overflow-hidden select-none flex flex-col justify-between p-4 z-10 bg-[#FBF9F4] grid-paper"
+                        >
+                          <div className="absolute top-3 right-3 select-none flex items-center gap-1 opacity-25">
+                            <span className="text-[8px] font-mono uppercase tracking-wider text-neutral-950">RIGHT_VERSO</span>
+                            <div className="w-1.5 h-1.5 rounded-full bg-neutral-900" />
+                          </div>
+                          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                            {currentSpread.rightPage.items.map((item) => (
+                              <div key={item.id} className="pointer-events-auto">
+                                <ScrapbookItem
+                                  item={item}
+                                  isSelected={selectedItemId === item.id}
+                                  onSelect={() => {
+                                    setSelectedItemId(item.id);
+                                    setSelectedItemPage('right');
+                                  }}
+                                  onUpdate={handleUpdateItem}
+                                  onDelete={handleDeleteItem}
+                                  onBringToFront={handleBringToFront}
+                                  onSendToBack={handleSendToBack}
+                                  onRestyleRansomWord={handleRestyleRansomWord}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                          {currentSpread.rightPage.items.length === 0 && (
+                            <div className="m-auto flex flex-col items-center justify-center p-6 text-center select-none opacity-40 pointer-events-none">
+                              <span className="text-xl">🌸</span>
+                              <p className="font-caveat text-base text-neutral-800 font-bold mt-1">Empty grid page</p>
+                              <p className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest mt-0.5">Place photo or washi tape.</p>
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    ) : (
+                      /* 2. REGULAR TWO-PAGE SPREAD COLLAGE MODE */
+                      <>
+                        {/* LEFT PAGE CANVASES */}
+                        <div 
+                          ref={leftPageRef}
+                          onDragOver={handleDragOver}
+                          onDrop={(e) => handleDrop(e, 'left')}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedItemPage('left');
+                            setSelectedItemId(null);
+                          }}
+                          className="w-1/2 h-full rounded-l-2xl shadow-lg relative overflow-hidden select-none border-r border-neutral-300/70 flex flex-col justify-between p-4 z-10 bg-[#FBF9F4] grid-paper"
+                        >
+                          <div className="absolute top-3 left-3 select-none flex items-center gap-1 opacity-25">
+                            <div className="w-1.5 h-1.5 rounded-full bg-neutral-900" />
+                            <span className="text-[8px] font-mono uppercase tracking-wider text-neutral-950">LEFT_VERSO</span>
+                          </div>
+                          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                            {currentSpread.leftPage.items.map((item) => (
+                              <div key={item.id} className="pointer-events-auto">
+                                <ScrapbookItem
+                                  item={item}
+                                  isSelected={selectedItemId === item.id}
+                                  onSelect={() => {
+                                    setSelectedItemId(item.id);
+                                    setSelectedItemPage('left');
+                                  }}
+                                  onUpdate={handleUpdateItem}
+                                  onDelete={handleDeleteItem}
+                                  onBringToFront={handleBringToFront}
+                                  onSendToBack={handleSendToBack}
+                                  onRestyleRansomWord={handleRestyleRansomWord}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                          {currentSpread.leftPage.items.length === 0 && (
+                            <div className="m-auto flex flex-col items-center justify-center p-6 text-center select-none opacity-40 pointer-events-none">
+                              <span className="text-xl">🎟️</span>
+                              <p className="font-caveat text-base text-neutral-800 font-bold mt-1">What happened today?</p>
+                              <p className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest mt-0.5">Drop everything in.</p>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Creased Binding crease/shading */}
+                        <SpiralBinding onClose={handleCloseBook} />
+
+                        {/* RIGHT PAGE CANVASES */}
+                        <div 
+                          ref={rightPageRef}
+                          onDragOver={handleDragOver}
+                          onDrop={(e) => handleDrop(e, 'right')}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedItemPage('right');
+                            setSelectedItemId(null);
+                          }}
+                          className="w-1/2 h-full rounded-r-2xl shadow-lg relative overflow-hidden select-none flex flex-col justify-between p-4 z-10 bg-[#FBF9F4] grid-paper"
+                        >
+                          <div className="absolute top-3 right-3 select-none flex items-center gap-1 opacity-25">
+                            <span className="text-[8px] font-mono uppercase tracking-wider text-neutral-950">RIGHT_VERSO</span>
+                            <div className="w-1.5 h-1.5 rounded-full bg-neutral-900" />
+                          </div>
+                          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                            {currentSpread.rightPage.items.map((item) => (
+                              <div key={item.id} className="pointer-events-auto">
+                                <ScrapbookItem
+                                  item={item}
+                                  isSelected={selectedItemId === item.id}
+                                  onSelect={() => {
+                                    setSelectedItemId(item.id);
+                                    setSelectedItemPage('right');
+                                  }}
+                                  onUpdate={handleUpdateItem}
+                                  onDelete={handleDeleteItem}
+                                  onBringToFront={handleBringToFront}
+                                  onSendToBack={handleSendToBack}
+                                  onRestyleRansomWord={handleRestyleRansomWord}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                          {currentSpread.rightPage.items.length === 0 && (
+                            <div className="m-auto flex flex-col items-center justify-center p-6 text-center select-none opacity-40 pointer-events-none">
+                              <span className="text-xl">🌸</span>
+                              <p className="font-caveat text-base text-[#1A1A1A] font-bold mt-1">Empty grid page</p>
+                              <p className="text-[10px] font-mono text-neutral-500 uppercase tracking-widest mt-0.5">Place photo or washi tape.</p>
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    )}
+
+                    {/* FLIPPING PAGE OVERLAY */}
+                    {isFlipping && (
+                      <>
+                        {isFlipping === 'forward' && (
+                          <div className="absolute top-0 bottom-0 left-0 right-0 z-15 pointer-events-none bg-neutral-950/40 rounded-2xl animate-shadow-forward" />
+                        )}
+                        {isFlipping === 'backward' && (
+                          <div className="absolute top-0 bottom-0 left-0 right-0 z-15 pointer-events-none bg-neutral-950/40 rounded-2xl animate-shadow-backward" />
+                        )}
+                        <div 
+                          className={`absolute top-0 bottom-0 w-1/2 z-40 preserve-3d pointer-events-none ${
+                            isFlipping === 'forward' 
+                              ? 'left-1/2 origin-left animate-flip-forward' 
+                              : 'left-0 origin-right animate-flip-backward'
+                          }`}
+                          style={{ transformStyle: 'preserve-3d' }}
+                        >
+                          <div className="absolute inset-0 bg-[#FBF9F4] shadow-lg rounded-2xl border border-neutral-300/40 backface-hidden flex flex-col justify-between p-4 overflow-hidden">
+                            <div className="absolute inset-0 grid-paper opacity-50" />
+                            <div className="absolute inset-0 bg-gradient-to-r from-black/10 via-transparent to-black/10 mix-blend-multiply" />
+                            <div className="absolute inset-0 bg-neutral-900/40 mix-blend-multiply animate-shading" />
+                          </div>
+                          <div className="absolute inset-0 bg-[#FBF9F4] shadow-lg rounded-2xl border border-neutral-300/40 backface-hidden rotate-y-180 flex flex-col justify-between p-4 overflow-hidden">
+                            <div className="absolute inset-0 grid-paper opacity-50" />
+                            <div className="absolute inset-0 bg-gradient-to-l from-black/10 via-transparent to-black/10 mix-blend-multiply" />
+                            <div className="absolute inset-0 bg-neutral-900/40 mix-blend-multiply animate-shading" />
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+              </ZoomableBook>
+            </div>
+          </>
+        )}
       </main>
 
       {/* FLOAT BAR TOOLBAR */}

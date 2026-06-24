@@ -1,6 +1,10 @@
 import React from 'react';
 
-export default function SpiralBinding() {
+interface SpiralBindingProps {
+  onClose?: () => void;
+}
+
+export default function SpiralBinding({ onClose }: SpiralBindingProps) {
   // We generate 22 evenly spaced metal ring loops down the vertical spine
   const ringsCount = 22;
   
@@ -12,6 +16,27 @@ export default function SpiralBinding() {
       {/* Shadow overlays representing paper curvature near the spine */}
       <div className="absolute inset-y-0 right-1/2 w-6 bg-gradient-to-r from-transparent via-black/[0.01] to-black/[0.12]" />
       <div className="absolute inset-y-0 left-1/2 w-6 bg-gradient-to-l from-transparent via-black/[0.01] to-black/[0.12]" />
+
+      {/* Close Book Bookmark Ribbon */}
+      {onClose && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onClose();
+          }}
+          className="absolute top-[-10px] left-1/2 -translate-x-1/2 w-4 h-16 bg-[#E8341A] hover:bg-red-700 shadow-lg border-x border-b border-black/30 z-50 cursor-pointer transition-all hover:h-20 flex flex-col items-center justify-end pb-2.5 group pointer-events-auto rounded-b"
+          title="Close Book & Return to Cover"
+        >
+          {/* Elegant ribbon end fold shadow */}
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/20" />
+          <span 
+            className="text-[6px] font-mono text-white/90 uppercase font-black tracking-widest select-none rotate-180 group-hover:text-white"
+            style={{ writingMode: 'vertical-rl' }}
+          >
+            CLOSE
+          </span>
+        </button>
+      )}
 
       {/* Render individual physical spiral wire rings */}
       {Array.from({ length: ringsCount }).map((_, idx) => (

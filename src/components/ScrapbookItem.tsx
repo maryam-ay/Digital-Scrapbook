@@ -60,6 +60,7 @@ export default function ScrapbookItem({
     }
 
     e.preventDefault();
+    e.stopPropagation();
     onSelect();
 
     dragStartRef.current = {
@@ -332,6 +333,7 @@ export default function ScrapbookItem({
       ref={itemRef}
       onPointerDown={handleDragStart}
       className={`absolute select-none cursor-grab active:cursor-grabbing ${isSelected ? 'z-50' : ''}`}
+      data-scrapbook-item="true"
       style={{
         left: `${localTransform.x}px`,
         top: `${localTransform.y}px`,
